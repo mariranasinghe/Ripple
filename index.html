@@ -7,10 +7,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Ripple">
 <meta name="theme-color" content="#0f1a2e">
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <title>Ripple</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500&display=swap');
+/* Offline-safe system fallbacks applied immediately, web fonts enhance once loaded */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 :root{
   --bg:#0f1a2e;--bg2:#162236;--bg3:#1d2d45;--bg4:#243452;
@@ -50,7 +51,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--fb);color:var(--ink
 .saving-bg{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(15,26,46,.6);}
 
 /* auth */
-.auth-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;}
+.auth-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-start;padding:env(safe-area-inset-top,0px) 24px 32px;padding-top:max(env(safe-area-inset-top,0px),40px);}
 .auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .auth-mark{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-size:24px;}
 .auth-word{font-family:var(--fh);font-size:30px;font-weight:800;color:var(--ink);}
@@ -90,7 +91,7 @@ select.fi{appearance:none;-webkit-appearance:none;}
 .tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:500;}
 
 /* page */
-.page{padding:14px;padding-bottom:20px;}
+.page{padding:14px;padding-bottom:calc(68px + env(safe-area-inset-bottom, 0px));}
 
 /* today */
 .greet{font-family:var(--fh);font-size:22px;font-weight:700;color:var(--ink);margin-bottom:2px;}
@@ -254,8 +255,7 @@ select.fi{appearance:none;-webkit-appearance:none;}
 .nit.on{color:var(--accent);}
 .nico{font-size:19px;line-height:1;}
 .ndot{position:absolute;top:7px;right:calc(50% - 13px);width:6px;height:6px;border-radius:50%;background:var(--amber-t);}
-/* bottom clearance so content isn't hidden behind fixed nav */
-.page{padding-bottom:calc(68px + env(safe-area-inset-bottom, 0px)) !important;}
+/* bottom clearance handled in .page base rule above */
 </style>
 </head>
 <body>
@@ -270,13 +270,18 @@ function loadDB(username){
   }catch(e){return null;}
 }
 function saveDB(username,data){
-  try{localStorage.setItem(STORE_KEY+'_'+username,JSON.stringify(data));}catch(e){}
+  try{localStorage.setItem(STORE_KEY+'_'+username,JSON.stringify(data));return true;}
+  catch(e){
+    // Storage full or blocked — show warning toast if app is running
+    if(typeof toast==='function')toast('⚠️ Could not save — storage full or blocked');
+    return false;
+  }
 }
 function loadUsers(){
   try{return JSON.parse(localStorage.getItem(STORE_KEY+'_users')||'{}');}catch(e){return{};}
 }
 function saveUsers(u){
-  try{localStorage.setItem(STORE_KEY+'_users',JSON.stringify(u));}catch(e){}
+  try{localStorage.setItem(STORE_KEY+'_users',JSON.stringify(u));return true;}catch(e){return false;}
 }
 function loadSess(){
   try{return JSON.parse(localStorage.getItem(STORE_KEY+'_sess'));}catch(e){return null;}
@@ -389,17 +394,19 @@ const hideSpin=()=>document.getElementById('sov')?.remove();
 /* Custom confirm — replaces native confirm() which breaks in iOS PWA */
 function rippleConfirm(msg,onOk,{okLabel='Delete',safe=false}={}){
   const bg=document.createElement('div');bg.className='modal-bg';
-  bg.innerHTML=`<div class="modal">
-    <div class="modal-title">Are you sure?</div>
-    <div class="modal-msg">${esc(msg)}</div>
-    <div class="modal-btns">
-      <button class="modal-cancel" id="mc">Cancel</button>
-      <button class="modal-ok ${safe?'safe':''}" id="mo">${esc(okLabel)}</button>
-    </div>
-  </div>`;
+  const cancelBtn=document.createElement('button');
+  cancelBtn.className='modal-cancel';cancelBtn.textContent='Cancel';
+  const okBtn=document.createElement('button');
+  okBtn.className='modal-ok '+(safe?'safe':'');okBtn.textContent=okLabel;
+  const modal=document.createElement('div');modal.className='modal';
+  modal.innerHTML=`<div class="modal-title">Are you sure?</div><div class="modal-msg">${esc(msg)}</div>`;
+  const btns=document.createElement('div');btns.className='modal-btns';
+  btns.appendChild(cancelBtn);btns.appendChild(okBtn);
+  modal.appendChild(btns);bg.appendChild(modal);
   document.body.appendChild(bg);
-  document.getElementById('mc').onclick=()=>bg.remove();
-  document.getElementById('mo').onclick=()=>{bg.remove();onOk();};
+  cancelBtn.onclick=()=>bg.remove();
+  okBtn.onclick=()=>{bg.remove();onOk();};
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
 }
 
 /* ══════ STATE ══════ */
@@ -408,30 +415,54 @@ let S={view:'auth',atab:'login',tab:'active',selId:null,overlay:null,form:{},log
 
 /* ══════ AUTH ══════ */
 function doLogin(){
-  const u=document.getElementById('lu')?.value?.trim();
-  const p=document.getElementById('lp')?.value?.trim();
+  const uRaw=document.getElementById('lu')?.value||'';
+  const pRaw=document.getElementById('lp')?.value||'';
+  // Trim whitespace and normalise to lowercase so iOS autocapitalise doesn't break login
+  const u=uRaw.trim().toLowerCase();
+  const p=pRaw.trim();
   if(!u||!p){showAuthErr('Please fill in all fields.');return;}
+  // Check localStorage is available
+  if(!storageAvailable()){showAuthErr('Storage unavailable. Please enable cookies/storage for this site in Safari Settings.');return;}
   const users=loadUsers();
-  if(!users[u]){showAuthErr('Username not found. Create an account first.');return;}
-  if(users[u].pinHash!==hashPin(p)){showAuthErr('Incorrect PIN. Try again.');return;}
-  startSession(u,users[u].dn);
+  // Try exact match first, then lowercase match for backwards compat
+  const matchKey=users[u]?u:Object.keys(users).find(k=>k.toLowerCase()===u);
+  if(!matchKey){showAuthErr('Username not found. Check your username or create an account.');return;}
+  if(users[matchKey].pinHash!==hashPin(p)){showAuthErr('Incorrect PIN. Try again.');return;}
+  startSession(matchKey,users[matchKey].dn);
 }
 
 function doRegister(){
   const name=document.getElementById('rn')?.value?.trim();
-  const u=document.getElementById('ru')?.value?.trim();
+  const uRaw=document.getElementById('ru')?.value||'';
+  // Force lowercase on register so it always matches on login
+  const u=uRaw.trim().toLowerCase();
   const p=document.getElementById('rp')?.value?.trim();
   const p2=document.getElementById('rp2')?.value?.trim();
   if(!name||!u||!p){showAuthErr('Please fill in all fields.');return;}
   if(p!==p2){showAuthErr('PINs do not match.');return;}
   if(p.length<4){showAuthErr('PIN must be at least 4 characters.');return;}
   if(!/^[a-z0-9_]+$/i.test(u)){showAuthErr('Username: letters, numbers and _ only.');return;}
+  // Check localStorage is available
+  if(!storageAvailable()){showAuthErr('Storage unavailable. Please enable cookies/storage for this site in Safari Settings → Advanced → Website Data.');return;}
   const users=loadUsers();
   if(users[u]){showAuthErr('Username taken. Choose another.');return;}
-  users[u]={dn:name,pinHash:hashPin(p),created:today()};
-  saveUsers(users);
+  const userData={dn:name,pinHash:hashPin(p),created:today()};
+  users[u]=userData;
+  const saved=saveUsers(users);
+  if(!saved){showAuthErr('Could not save account — storage may be full or blocked. Check Safari Settings → Privacy.');return;}
   saveDB(u,{experiments:[],nextId:1,moodHistory:[]});
   startSession(u,name);
+}
+
+// Test if localStorage is actually working (iOS PWA can block it)
+function storageAvailable(){
+  try{
+    const k='__ripple_test__';
+    localStorage.setItem(k,'1');
+    const ok=localStorage.getItem(k)==='1';
+    localStorage.removeItem(k);
+    return ok;
+  }catch(e){return false;}
 }
 
 function startSession(u,dn){
@@ -485,26 +516,31 @@ function render(){
 /* AUTH */
 function renderAuth(){
   const isL=S.atab==='login';
+  const storageFail=!storageAvailable();
+  const users=storageFail?{}:loadUsers();
+  const existingUsers=Object.keys(users);
   return`<div class="auth-wrap">
     <div class="auth-brand"><div class="auth-mark">🌊</div><div class="auth-word">Ripple</div></div>
     <div class="auth-tag">Small daily actions create ripples.<br>Track what actually works for you.</div>
+    ${storageFail?`<div class="auth-err" style="margin-bottom:16px">⚠️ Storage blocked. Go to <strong>Settings → Safari → Privacy & Security</strong> and allow storage for this site.</div>`:''}
     <div class="auth-card">
       <div class="auth-tabs">
         <button class="auth-tab ${isL?'on':''}" onclick="S.atab='login';render()">Sign in</button>
         <button class="auth-tab ${!isL?'on':''}" onclick="S.atab='register';render()">Create account</button>
       </div>
       ${isL?`
-        <div class="field"><label class="fl">Username</label><input class="fi" id="lu" placeholder="your_username" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter')doLogin()"></div>
-        <div class="field"><label class="fl">PIN</label><input class="fi" id="lp" type="password" placeholder="Your PIN" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        ${existingUsers.length>0?`<div style="font-size:12px;color:var(--ink3);background:var(--bg3);border-radius:var(--r);padding:8px 10px;margin-bottom:12px;font-family:var(--fm)">Accounts on this device: ${existingUsers.map(k=>`<span style="color:var(--accent)">${esc(k)}</span>`).join(', ')}</div>`:''}
+        <div class="field"><label class="fl">Username</label><input class="fi" id="lu" placeholder="your_username" autocapitalize="none" autocorrect="off" autocomplete="username" spellcheck="false" oninput="this.value=this.value.toLowerCase();clearAuthErr()" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="field"><label class="fl">PIN</label><input class="fi" id="lp" type="password" placeholder="Your PIN" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter')doLogin()"></div>
         <button class="btn-p" onclick="doLogin()">Sign in →</button>
-        <div class="auth-note">Data saved on this device. Share the file — everyone gets their own account.</div>
+        <div class="auth-note">Your data is saved on this device.</div>
       `:`
-        <div class="field"><label class="fl">Your name</label><input class="fi" id="rn" placeholder="Alex Chen" oninput="clearAuthErr()"></div>
-        <div class="field"><label class="fl">Username</label><input class="fi" id="ru" placeholder="alex_chen" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="clearAuthErr()"></div>
-        <div class="field"><label class="fl">PIN (4+ digits)</label><input class="fi" id="rp" type="password" placeholder="Choose a PIN" oninput="clearAuthErr()"></div>
-        <div class="field"><label class="fl">Confirm PIN</label><input class="fi" id="rp2" type="password" placeholder="Repeat PIN" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter')doRegister()"></div>
+        <div class="field"><label class="fl">Your name</label><input class="fi" id="rn" placeholder="Alex Chen" autocomplete="name" oninput="clearAuthErr()"></div>
+        <div class="field"><label class="fl">Username</label><input class="fi" id="ru" placeholder="alex_chen" autocapitalize="none" autocorrect="off" autocomplete="username" spellcheck="false" oninput="this.value=this.value.toLowerCase();clearAuthErr()"></div>
+        <div class="field"><label class="fl">PIN (4+ digits)</label><input class="fi" id="rp" type="password" placeholder="Choose a PIN" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="clearAuthErr()"></div>
+        <div class="field"><label class="fl">Confirm PIN</label><input class="fi" id="rp2" type="password" placeholder="Repeat PIN" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" oninput="clearAuthErr()" onkeydown="if(event.key==='Enter')doRegister()"></div>
         <button class="btn-p" onclick="doRegister()">Create account →</button>
-        <div class="auth-note">Share this file with friends — each person gets their own private account on their device.</div>
+        <div class="auth-note">Your data is saved on this device.</div>
       `}
     </div>
   </div>`;
@@ -626,7 +662,7 @@ function renderDetail(){
   const exp=DB.experiments.find(e=>e.id===S.selId);
   if(!exp){S.view='list';return renderList();}
   const s=calcStreak(exp);const ci=(exp.checkIns||[]).length;
-  return`<div class="page" style="padding-top:0">
+  return`<div class="page" style="padding-top:env(safe-area-inset-top, 12px)">
     <button class="d-back" onclick="goBack()">← Back</button>
     <div class="d-hero">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:9px;margin-bottom:5px">
@@ -901,7 +937,7 @@ function deleteExp(id){
 (()=>{
   // Register external service worker (sw.js in repo root)
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
   }
 
   // iOS "Add to Home Screen" nudge (shown once, only on Safari iOS, only when not already installed)

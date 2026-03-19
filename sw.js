@@ -1,8 +1,10 @@
-const CACHE_NAME = 'ripple-v1';
+const CACHE_NAME = 'ripple-v2';
+
+// Use relative URLs so this works on any path (GitHub Pages subdir or root)
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 self.addEventListener('install', event => {
@@ -25,6 +27,10 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Only handle same-origin requests (skip Google Fonts etc.)
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     caches.match(event.request)
       .then(cached => {
@@ -35,7 +41,7 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
           return response;
-        }).catch(() => caches.match('/index.html'));
+        }).catch(() => caches.match('./index.html'));
       })
   );
 });
