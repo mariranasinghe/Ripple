@@ -96,28 +96,24 @@ select.fi{appearance:none;-webkit-appearance:none;}
 /* today */
 .greet{font-family:var(--fh);font-size:22px;font-weight:700;color:var(--ink);margin-bottom:2px;}
 .greet-date{font-size:12px;color:var(--ink3);font-family:var(--fm);margin-bottom:14px;}
-.xp-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:12px;}
-.xp-lv-name{font-family:var(--fh);font-size:17px;font-weight:800;color:var(--ink);margin-bottom:2px;}
-.xp-lv-sub{font-size:12px;color:var(--ink3);font-family:var(--fm);margin-bottom:10px;}
-.xp-track{height:10px;background:var(--bg3);border-radius:6px;overflow:hidden;margin-bottom:6px;}
-.xp-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--accent));transition:width .4s ease;}
-.xp-row{display:flex;justify-content:space-between;align-items:center;}
-.xp-pts-lbl{font-size:11px;color:var(--ink3);font-family:var(--fm);}
-.xp-next-lbl{font-size:11px;color:var(--purple-t);font-family:var(--fm);font-weight:600;}
+.xp-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:12px;}
+.xp-head{display:flex;justify-content:space-between;margin-bottom:7px;}
+.xp-lv{font-family:var(--fh);font-size:13px;font-weight:700;color:var(--purple-t);}
+.xp-pts{font-size:11px;color:var(--ink3);font-family:var(--fm);}
+.xp-track{height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.xp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--purple),var(--accent));}
 .sum-row{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:12px;}
 .sum-stat{flex:1;text-align:center;}
 .sum-num{font-family:var(--fh);font-size:22px;font-weight:700;color:var(--ink);}
 .sum-lbl{font-size:10px;color:var(--ink3);font-family:var(--fm);text-transform:uppercase;margin-top:2px;}
 .sum-div{width:1px;background:var(--border);margin:0 4px;}
-.wk-strip{display:flex;gap:6px;margin-bottom:12px;}
-.wk-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.wk-lbl{font-size:10px;color:var(--ink3);font-family:var(--fm);font-weight:500;}
-.wk-dot{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:var(--fm);color:var(--ink3);cursor:pointer;transition:transform .1s;}
-.wk-dot:active{transform:scale(.9);}
-.wk-dot.wk-sel{box-shadow:0 0 0 2px var(--accent);}
+.wk-strip{display:flex;gap:4px;margin-bottom:12px;}
+.wk-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.wk-lbl{font-size:9px;color:var(--ink3);font-family:var(--fm);}
+.wk-dot{width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--fm);color:var(--ink3);}
 .wk-dot.wk-full{background:var(--green-dim);border-color:var(--green-t);color:var(--green-t);}
 .wk-dot.wk-part{background:var(--amber-dim);border-color:var(--amber-t);color:var(--amber-t);}
-.wk-dot.wk-today{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+.wk-dot.wk-today{border-color:var(--accent);color:var(--accent);}
 .wk-dot.wk-today.wk-full{background:var(--green-dim);border-color:var(--accent);color:var(--green-t);}
 .mood-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:14px;margin-bottom:12px;}
 .mood-lbl{font-size:11px;color:var(--ink3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
@@ -303,7 +299,7 @@ const FREQS=['daily','weekdays','weekends','3x/week','weekly'];
 const ML={high:'Improved',mid:'Neutral',low:'Declined',none:'N/A'};
 const MA={high:'↑',mid:'→',low:'↓',none:'·'};
 const MOODS=[{e:'😴',l:'rough'},{e:'😕',l:'meh'},{e:'😐',l:'okay'},{e:'🙂',l:'good'},{e:'🤩',l:'great'}];
-const LEVELS=[{n:'🥱 Still Snoozing',x:0},{n:'🌱 First Steps',x:50},{n:'🔥 Catching Fire',x:150},{n:'⚡ On A Roll',x:300},{n:'🚀 Unstoppable',x:500},{n:'💎 Diamond Habit',x:800},{n:'🌊 Ripple Legend',x:1200}];
+const LEVELS=[{n:'Curious',x:0},{n:'Tester',x:50},{n:'Builder',x:150},{n:'Streaker',x:300},{n:'Optimizer',x:500},{n:'Master',x:800},{n:'Legend',x:1200}];
 const WDAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 /* ══════ UTILS ══════ */
@@ -353,9 +349,8 @@ function calcStreak(exp){
 
 function checkedToday(exp){return(exp.checkIns||[]).includes(today());}
 
-function getWeekDates(offsetWeeks=0){
+function getWeekDates(){
   const d=new Date();
-  d.setDate(d.getDate()+(offsetWeeks*7));
   const day=d.getDay();
   const mon=new Date(d);
   mon.setDate(d.getDate()-(day===0?6:day-1));
@@ -416,7 +411,7 @@ function rippleConfirm(msg,onOk,{okLabel='Delete',safe=false}={}){
 
 /* ══════ STATE ══════ */
 let USER=null,DB=null;
-let S={view:'auth',atab:'login',tab:'active',selId:null,overlay:null,form:{},logForm:{},moodForm:{},weekOffset:0,selectedDay:null};
+let S={view:'auth',atab:'login',tab:'active',selId:null,overlay:null,form:{},logForm:{},moodForm:{}};
 
 /* ══════ AUTH ══════ */
 function doLogin(){
@@ -553,241 +548,71 @@ function renderAuth(){
 
 /* TODAY */
 function renderToday(){
-  const off=S.weekOffset||0;
-  const isCurrentWeek=off===0;
   const acts=DB.experiments.filter(e=>e.status==='active');
   const need=needCheckIn(DB);
   const doneN=acts.filter(e=>checkedToday(e)).length;
   const todMood=(DB.moodHistory||[]).find(m=>m.date===today());
-  const wkDates=getWeekDates(off);
-  const xp=calcXP(DB);
-  const lv=getLevel(xp);
-  const nxLv=getNextLv(xp);
+  const wkDates=getWeekDates();
+  const xp=calcXP(DB);const lv=getLevel(xp);const nxLv=getNextLv(xp);
   const xpBar=nxLv?Math.min(100,Math.max(0,Math.round(((xp-lv.x)/(nxLv.x-lv.x))*100))):100;
-  const greet=getGreeting()+', '+USER.displayName.split(' ')[0];
+  const greet=`${getGreeting()}, ${USER.displayName.split(' ')[0]}`;
   const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-
-  // Week label
-  const wkStart=new Date(wkDates[0]+'T00:00:00');
-  const wkEnd=new Date(wkDates[6]+'T00:00:00');
-  const fmtShort=function(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});};
-  const wkLabel=isCurrentWeek?'This week':fmtShort(wkStart)+' – '+fmtShort(wkEnd);
-
-  // Week stats
-  const wkCheckIns=wkDates.reduce(function(tot,d){return tot+acts.filter(function(e){return(e.checkIns||[]).includes(d);}).length;},0);
-  const wkMoods=wkDates.map(function(d){return(DB.moodHistory||[]).find(function(m){return m.date===d;});}).filter(Boolean);
-  const wkAvgMood=wkMoods.length?Math.round(wkMoods.reduce(function(s,m){return s+m.score;},0)/wkMoods.length):null;
-  const wkDaysActive=wkDates.filter(function(d){return acts.some(function(e){return(e.checkIns||[]).includes(d);});}).length;
-
-  var html='';
-
-  // Topbar
-  html+='<div class="topbar"><div class="topbar-in">';
-  html+='<div class="t-brand"><div class="t-mark">🌊</div><div><div class="t-name">Ripple</div><div class="t-sub">@'+esc(USER.username)+'</div></div></div>';
-  html+='<div class="t-right"><div class="xp-badge">⚡'+xp+' XP</div><button class="icon-btn" onclick="doLogout()">👤</button></div>';
-  html+='</div></div>';
-
-  html+='<div class="page">';
-
-  // Top stats block
-  if(isCurrentWeek){
-    html+='<div class="greet">'+esc(greet)+'</div>';
-    html+='<div class="greet-date">'+dateStr+'</div>';
-    html+='<div class="xp-wrap">';
-    html+='<div class="xp-lv-name">'+lv.n+'</div>';
-    html+='<div class="xp-lv-sub">'+xp+' XP earned so far</div>';
-    html+='<div class="xp-track"><div class="xp-fill" style="width:'+xpBar+'%"></div></div>';
-    html+='<div class="xp-row">';
-    if(nxLv){
-      var xpNeeded=nxLv.x-xp;
-      html+='<span class="xp-pts-lbl">'+xpBar+'% to next level</span>';
-      html+='<span class="xp-next-lbl">'+xpNeeded+' XP → '+nxLv.n+'</span>';
-    } else {
-      html+='<span class="xp-pts-lbl">Max level reached!</span>';
-      html+='<span class="xp-next-lbl">🏆 Legend</span>';
-    }
-    html+='</div>';
-    html+='</div>';
-    html+='<div class="sum-row">';
-    html+='<div class="sum-stat"><div class="sum-num">'+doneN+'/'+acts.length+'</div><div class="sum-lbl">Done today</div></div>';
-    html+='<div class="sum-div"></div>';
-    html+='<div class="sum-stat"><div class="sum-num">'+(acts.length>0?Math.round(doneN/acts.length*100):0)+'%</div><div class="sum-lbl">Completion</div></div>';
-    html+='<div class="sum-div"></div>';
-    html+='<div class="sum-stat"><div class="sum-num">'+DB.experiments.filter(function(e){return e.status==='complete';}).length+'</div><div class="sum-lbl">All-time done</div></div>';
-    html+='</div>';
-  } else {
-    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px;margin-bottom:12px">';
-    html+='<div style="font-size:11px;color:var(--ink3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Week summary</div>';
-    html+='<div class="sum-row" style="margin-bottom:0;background:none;border:none;padding:0">';
-    html+='<div class="sum-stat"><div class="sum-num">'+wkDaysActive+'</div><div class="sum-lbl">Active days</div></div>';
-    html+='<div class="sum-div"></div>';
-    html+='<div class="sum-stat"><div class="sum-num">'+wkCheckIns+'</div><div class="sum-lbl">Check-ins</div></div>';
-    html+='<div class="sum-div"></div>';
-    html+='<div class="sum-stat"><div class="sum-num">'+(wkAvgMood!==null?MOODS[wkAvgMood].e:'—')+'</div><div class="sum-lbl">Avg mood</div></div>';
-    html+='</div></div>';
-  }
-
-  // Week navigation
-  html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
-  html+='<button onclick="S.weekOffset=(S.weekOffset||0)-1;S.selectedDay=null;render()" style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;color:var(--ink2);flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1">‹</button>';
-  html+='<div style="flex:1;text-align:center;font-size:11px;font-family:var(--fm);color:var(--ink3)">'+wkLabel+'</div>';
-  html+='<button onclick="if((S.weekOffset||0)<0){S.weekOffset=(S.weekOffset||0)+1;S.selectedDay=null;render();}" style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;color:var(--ink2);flex-shrink:0;display:flex;align-items:center;justify-content:center;line-height:1;opacity:'+(isCurrentWeek?'0.25':'1')+'">›</button>';
-  html+='</div>';
-
-  // Week strip dots — clickable
-  html+='<div class="wk-strip">';
-  for(var i=0;i<wkDates.length;i++){
-    var d=wkDates[i];
-    var isT=d===today();
-    var isFuture=d>today();
-    var dayNum=parseInt(d.split('-')[2]);
-    var ci=acts.filter(function(e){return(e.checkIns||[]).includes(d);}).length;
-    var full=acts.length>0&&ci===acts.length;
-    var part=ci>0&&!full;
-    var dayMood=(DB.moodHistory||[]).find(function(m){return m.date===d;});
-    var isSel=S.selectedDay===d;
-    var cls='';
-    if(isT&&full)cls='wk-today wk-full';
-    else if(isT)cls='wk-today';
-    else if(full)cls='wk-full';
-    else if(part)cls='wk-part';
-    if(isSel)cls+=' wk-sel';
-    var content='';
-    if(full){
-      content='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="1.5,6 4.5,9.5 10.5,2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    } else if(part){
-      content=String(ci);
-    } else if(dayMood&&!isT&&!isFuture){
-      content='<span style="font-size:11px">'+MOODS[dayMood.score].e+'</span>';
-    } else if(isT){
-      content='<span style="font-size:9px;font-family:var(--fm);font-weight:500">'+dayNum+'</span>';
-    } else if(isFuture){
-      content='<span style="font-size:9px;font-family:var(--fm);opacity:.4">'+dayNum+'</span>';
-    } else {
-      content='<span style="font-size:9px;font-family:var(--fm);opacity:.5">'+dayNum+'</span>';
-    }
-    // Clicking a past/today dot selects it; clicking again deselects
-    var clickHandler=isFuture?'':(isSel?'onclick="S.selectedDay=null;render()"':'onclick="S.selectedDay=\''+d+'\';render()"');
-    html+='<div class="wk-day"><div class="wk-lbl">'+WDAYS[i]+'</div><div class="wk-dot '+cls+'" title="'+d+'" '+clickHandler+'>'+content+'</div></div>';
-  }
-  html+='</div>';
-
-  // Helper: render a single selected day's detail
-  function dayDetail(sd){
-    var sdLabel=new Date(sd+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    var sdMood=(DB.moodHistory||[]).find(function(m){return m.date===sd;});
-    var sdChecks=DB.experiments.filter(function(e){return(e.checkIns||[]).includes(sd);});
-    var sdLogs=[];
-    for(var sdi=0;sdi<DB.experiments.length;sdi++){
-      var exL=(DB.experiments[sdi].logs||[]).filter(function(l){return l.date===sd;});
-      for(var sli=0;sli<exL.length;sli++) sdLogs.push({note:exL[sli].note,expName:DB.experiments[sdi].name});
-    }
-    var out='<div class="ins-block" style="margin-bottom:0">';
-    out+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-    out+='<div style="font-size:14px;font-weight:600;color:var(--ink)">'+sdLabel+'</div>';
-    out+=(sdMood?'<span style="font-size:20px">'+MOODS[sdMood.score].e+'</span>':'');
-    out+='</div>';
-    if(sdChecks.length){
-      out+='<div style="font-size:11px;color:var(--ink3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Experiments</div>';
-      for(var k=0;k<sdChecks.length;k++){
-        out+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border-radius:10px;margin-bottom:6px">';
-        out+='<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="var(--green-t)" stroke-width="1.5"/><polyline points="4,7 6.5,9.5 10,4.5" stroke="var(--green-t)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-        out+='<span style="font-size:13px;color:var(--ink)">'+esc(sdChecks[k].name)+'</span>';
-        out+='</div>';
-      }
-    }
-    if(sdLogs.length){
-      out+='<div style="font-size:11px;color:var(--ink3);font-family:var(--fm);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px">Notes</div>';
-      for(var j=0;j<sdLogs.length;j++){
-        out+='<div class="log-entry" style="margin-bottom:6px"><div class="log-date">'+esc(sdLogs[j].expName)+'</div><div class="log-note">'+esc(sdLogs[j].note)+'</div></div>';
-      }
-    }
-    if(!sdChecks.length&&!sdLogs.length&&!sdMood){
-      out+='<div style="text-align:center;padding:20px 0;color:var(--ink3);font-size:13px">Nothing logged this day.</div>';
-    }
-    out+='</div>';
-    return out;
-  }
-
-  // Current week: mood + experiments, or tapped-day detail
-  if(isCurrentWeek){
-    if(S.selectedDay&&S.selectedDay!==today()&&S.selectedDay>=wkDates[0]){
-      html+=dayDetail(S.selectedDay);
-    } else {
-      html+='<div class="mood-box"><div class="mood-lbl">Daily check-in</div>';
-      if(todMood){
-        html+='<div class="mood-done">'+MOODS[todMood.score].e+' Mood: <strong>'+MOODS[todMood.score].l+'</strong><span style="margin-left:auto;font-size:11px;color:var(--ink3);cursor:pointer" onclick="openMoodForm()">change</span></div>';
-      } else {
-        html+='<div class="mood-q">How are you feeling?</div><div class="mood-row">';
-        for(var mi=0;mi<MOODS.length;mi++){
-          html+='<button class="mood-btn" onclick="quickMood('+mi+')">'+MOODS[mi].e+'<span>'+MOODS[mi].l+'</span></button>';
-        }
-        html+='</div>';
-      }
-      html+='</div>';
-      if(acts.length===0){
-        html+='<div class="empty" style="padding:20px"><div class="empty-ico">🌱</div><div class="empty-ttl">No active experiments</div><div class="empty-sub">Add one from the Experiments tab.</div></div>';
-      } else {
-        var remaining=need.length;
-        html+='<div class="sec-hdr">Today\'s experiments<span style="font-size:11px;color:'+(remaining===0?'var(--green-t)':'var(--amber-t)')+'\">'+(remaining===0?'All done \u2713':remaining+' remaining')+'</span></div>';
-        for(var ai=0;ai<acts.length;ai++){
-          var exp=acts[ai];
-          var done=checkedToday(exp);
-          var streak=calcStreak(exp);
-          html+='<div class="hbit '+(done?'done':'')+'\" onclick="toggleCheckIn('+exp.id+')">';
-          html+='<div class="chk '+(done?'done':'')+'">'+(done?'<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polyline points="2,6.5 5,10 11,3" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+'</div>';
-          html+='<div class="chk-info"><div class="chk-name">'+esc(exp.name)+'</div>';
-          html+='<div class="chk-meta">'+esc(exp.category)+' \u00b7 '+(exp.frequency||'daily');
-          if(streak.current>0)html+=' <span class="stk-badge '+(streak.current>=7?'hot':'')+'">'+'🔥'+streak.current+'d</span>';
-          html+='</div></div></div>';
-        }
-      }
-    }
-
-  } else {
-    // Past week — selected day detail or full week summary cards
-    if(S.selectedDay&&S.selectedDay<=today()&&S.selectedDay>=wkDates[0]&&S.selectedDay<=wkDates[6]){
-      html+=dayDetail(S.selectedDay);
-    } else {
-      var hasAnyDay=false;
-      var histHtml='';
-      for(var hi=0;hi<wkDates.length;hi++){
-        var hd=wkDates[hi];
-        if(hd>today())continue;
-        var hMood=(DB.moodHistory||[]).find(function(m){return m.date===hd;});
-        var hChecks=DB.experiments.filter(function(e){return(e.checkIns||[]).includes(hd);});
-        var hLogs=[];
-        for(var ei=0;ei<DB.experiments.length;ei++){
-          var exLogs=(DB.experiments[ei].logs||[]).filter(function(l){return l.date===hd;});
-          for(var li=0;li<exLogs.length;li++){
-            hLogs.push({note:exLogs[li].note,expName:DB.experiments[ei].name});
-          }
-        }
-        if(!hMood&&!hChecks.length&&!hLogs.length)continue;
-        hasAnyDay=true;
-        var dLabel=new Date(hd+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
-        histHtml+='<div class="ins-block" style="margin-bottom:9px">';
-        histHtml+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-        histHtml+='<div style="font-size:12px;font-weight:500;color:var(--ink)">'+dLabel+'</div>';
-        if(hMood)histHtml+='<span style="font-size:16px">'+MOODS[hMood.score].e+'</span>';
-        histHtml+='</div>';
-        if(hChecks.length){
-          histHtml+='<div style="font-size:11px;color:var(--green-t);font-family:var(--fm);margin-bottom:5px">\u2713 '+hChecks.map(function(e){return esc(e.name);}).join(' \u00b7 ')+'</div>';
-        }
-        for(var hli=0;hli<hLogs.length;hli++){
-          histHtml+='<div class="log-entry" style="margin-bottom:5px"><div class="log-date">'+esc(hLogs[hli].expName)+'</div><div class="log-note">'+esc(hLogs[hli].note)+'</div></div>';
-        }
-        histHtml+='</div>';
-      }
-      if(hasAnyDay){
-        html+=histHtml;
-      } else {
-        html+='<div class="empty" style="padding:28px 24px"><div class="empty-ico">📭</div><div class="empty-ttl">Nothing logged</div><div class="empty-sub">No check-ins or entries for this week.</div></div>';
-      }
-    }
-  }
-  html+=navHtml();
-  return html;
+  return`
+    <div class="topbar"><div class="topbar-in">
+      <div class="t-brand"><div class="t-mark">🌊</div><div><div class="t-name">Ripple</div><div class="t-sub">@${esc(USER.username)}</div></div></div>
+      <div class="t-right"><div class="xp-badge">⚡${xp} XP</div><button class="icon-btn" onclick="doLogout()">👤</button></div>
+    </div></div>
+    <div class="page">
+      <div class="greet">${esc(greet)}</div>
+      <div class="greet-date">${dateStr}</div>
+      <div class="xp-wrap">
+        <div class="xp-head"><div class="xp-lv">Level: ${lv.n}</div><div class="xp-pts">${xp} XP${nxLv?' · next: '+nxLv.n+' at '+nxLv.x:' · Max level!'}</div></div>
+        <div class="xp-track"><div class="xp-fill" style="width:${xpBar}%"></div></div>
+      </div>
+      <div class="sum-row">
+        <div class="sum-stat"><div class="sum-num">${doneN}/${acts.length}</div><div class="sum-lbl">Done today</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-stat"><div class="sum-num">${acts.length>0?Math.round(doneN/acts.length*100):0}%</div><div class="sum-lbl">Completion</div></div>
+        <div class="sum-div"></div>
+        <div class="sum-stat"><div class="sum-num">${DB.experiments.filter(e=>e.status==='complete').length}</div><div class="sum-lbl">All-time done</div></div>
+      </div>
+      <div class="wk-strip">${wkDates.map((d,i)=>{
+        const isT=d===today();
+        const ci=acts.filter(e=>(e.checkIns||[]).includes(d)).length;
+        const full=acts.length>0&&ci===acts.length;
+        const part=ci>0&&!full;
+        let cls=isT?'wk-today':'';
+        if(!isT){if(full)cls='wk-full';else if(part)cls='wk-part';}
+        else if(full)cls='wk-today wk-full';
+        return`<div class="wk-day"><div class="wk-lbl">${WDAYS[i]}</div><div class="wk-dot ${cls}">${ci||''}</div></div>`;
+      }).join('')}</div>
+      <div class="mood-box">
+        <div class="mood-lbl">Daily check-in</div>
+        ${todMood
+          ?`<div class="mood-done">${MOODS[todMood.score].e} Mood: <strong>${MOODS[todMood.score].l}</strong><span style="margin-left:auto;font-size:11px;color:var(--ink3);cursor:pointer" onclick="openMoodForm()">change</span></div>`
+          :`<div class="mood-q">How are you feeling?</div>
+            <div class="mood-row">${MOODS.map((m,i)=>`<button class="mood-btn" onclick="quickMood(${i})">${m.e}<span>${m.l}</span></button>`).join('')}</div>`}
+      </div>
+      ${acts.length===0
+        ?`<div class="empty" style="padding:20px"><div class="empty-ico">🌱</div><div class="empty-ttl">No active experiments</div><div class="empty-sub">Add one from the Experiments tab.</div></div>`
+        :`<div class="sec-hdr">Today's habits<span style="font-size:11px;color:${need.length===0?'var(--green-t)':'var(--amber-t)'}">${need.length===0?'All done ✓':need.length+' remaining'}</span></div>
+          ${acts.map(exp=>{
+            const done=checkedToday(exp);
+            const s=calcStreak(exp);
+            return`<div class="hbit ${done?'done':''}" onclick="toggleCheckIn(${exp.id})">
+              <div class="chk ${done?'done':''}">
+                ${done?`<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polyline points="2,6.5 5,10 11,3" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}
+              </div>
+              <div class="chk-info">
+                <div class="chk-name">${esc(exp.name)}</div>
+                <div class="chk-meta">${esc(exp.category)} · ${exp.frequency||'daily'}
+                  ${s.current>0?`<span class="stk-badge ${s.current>=7?'hot':''}">🔥${s.current}d</span>`:''}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}`}
+    </div>
+    ${navHtml()}`;
 }
 
 /* LIST */
