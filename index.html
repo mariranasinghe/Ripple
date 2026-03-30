@@ -477,40 +477,64 @@ const BADGES=[
 
 function getEarnedBadges(){return BADGES.filter(b=>b.check(DB));}
 
-async function fetchAIInsight(){
+function fetchAIInsight(){
   const card=document.getElementById('ai-insight-body');
   if(!card)return;
-  card.innerHTML='<div class="ai-loading"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div><span style="margin-left:4px">Analysing your habits…</span></div>';
 
   const acts=DB.experiments.filter(e=>e.status==='active');
-  const streaks=acts.map(e=>({name:e.name,streak:calcStreak(e).current,checkins:(e.checkIns||[]).length}));
-  const mood=(DB.moodHistory||[]).slice(-7).map(m=>MOODS[m.score].l);
+  const all=DB.experiments;
   const xp=calcXP(DB);
+  const moods=(DB.moodHistory||[]).slice(-7);
+  const avgMood=moods.length?moods.reduce((s,m)=>s+m.score,0)/moods.length:null;
+  const totalCI=acts.reduce((t,e)=>t+(e.checkIns||[]).length,0);
+  const bestExp=acts.sort((a,b)=>calcStreak(b).current-calcStreak(a).current)[0];
+  const bestStreak=bestExp?calcStreak(bestExp).current:0;
+  const todayDone=acts.filter(e=>checkedToday(e)).length;
+  const todayTotal=acts.length;
+  const completed=all.filter(e=>e.status==='complete').length;
 
-  const prompt=`You are a supportive habit coach. Here is a user's habit data:
-Active experiments: ${JSON.stringify(streaks)}
-Recent moods (last 7 days): ${mood.join(', ')||'none logged'}
-Total XP: ${xp}
-Total check-ins: ${acts.reduce((t,e)=>t+(e.checkIns||[]).length,0)}
+  // Build a personalised insight from the data
+  var lines=[];
 
-Write a SHORT (2-3 sentences max), warm, personal insight about their progress. Be specific about what's working or what they could try. No bullet points, no headers, just conversational encouragement.`;
+  if(all.length===0){
+    lines.push("You haven't started any experiments yet — the hardest part is just beginning. Add your first one and see what changes.");
+  } else if(totalCI===0){
+    lines.push("You've set up "+all.length+" experiment"+(all.length>1?'s':'')+", which is a great start! Try checking in today to build your first streak.");
+  } else {
+    // Opening — based on streak
+    if(bestStreak>=7){
+      lines.push("You're on a "+bestStreak+"-day streak with "+esc(bestExp.name)+" — that's seriously impressive momentum.");
+    } else if(bestStreak>=3){
+      lines.push("A "+bestStreak+"-day streak on "+esc(bestExp.name)+" is building nicely. Keep it going and it'll start to feel automatic.");
+    } else if(bestStreak===1){
+      lines.push("You've got a streak started on "+esc(bestExp.name)+" — check in again tomorrow to keep it alive.");
+    } else if(todayDone>0){
+      lines.push("Good work checking in today ("+todayDone+"/"+todayTotal+"). Showing up consistently is exactly how habits stick.");
+    } else {
+      lines.push("You've logged "+totalCI+" check-in"+(totalCI>1?'s':'')+' across your experiments — every one of those counts.');
+    }
 
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:150,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'Keep going — every check-in counts!';
-    card.innerHTML='<div class="ai-body">'+text+'</div><span class="ai-refresh" onclick="fetchAIInsight()">↻ Refresh</span>';
-  }catch(e){
-    card.innerHTML='<div class="ai-body">Keep showing up — consistency is the real secret to change.</div><span class="ai-refresh" onclick="fetchAIInsight()">↻ Refresh</span>';
+    // Middle — mood or completion insight
+    if(avgMood!==null&&avgMood>=3.5){
+      lines.push("Your mood has been trending "+MOODS[Math.round(avgMood)].l+" lately — that's often a sign your habits are working.");
+    } else if(avgMood!==null&&avgMood<2.5){
+      lines.push("Your mood has been a bit low recently. Even small wins like a single check-in can shift how you feel.");
+    } else if(completed>0){
+      lines.push("You've already completed "+completed+" experiment"+(completed>1?'s':'')+", which puts you ahead of most people who try habit tracking.");
+    } else if(acts.length>1){
+      lines.push("Running "+acts.length+" experiments at once shows real commitment — just make sure each one gets a check-in.");
+    }
+
+    // Closing nudge
+    if(todayDone<todayTotal&&todayTotal>0){
+      lines.push("You still have "+(todayTotal-todayDone)+" experiment"+(todayTotal-todayDone>1?'s':'')+' to check in on today — finish strong!');
+    } else if(xp>=100){
+      lines.push("With "+xp+" XP earned you're well on your way — keep the streak alive and the next level is within reach.");
+    }
   }
+
+  const insight=lines.slice(0,2).join(' ');
+  card.innerHTML='<div class="ai-body">'+insight+'</div><span class="ai-refresh" onclick="fetchAIInsight()">↻ New insight</span>';
 }
 
 function getMonthlyReview(){
