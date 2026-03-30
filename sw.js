@@ -1,9 +1,6 @@
-const CACHE_NAME = 'ripple-v2';
+const CACHE_NAME = 'ripple-v3';
 
-// Use relative URLs so this works on any path (GitHub Pages subdir or root)
 const ASSETS = [
-  './',
-  './index.html',
   './manifest.json'
 ];
 
@@ -27,21 +24,28 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  // Only handle same-origin requests (skip Google Fonts etc.)
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Always fetch index.html fresh — never serve from cache
+  if (url.pathname.endsWith('/') || url.pathname.endsWith('index.html')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Cache everything else (icons, manifest)
   event.respondWith(
-    caches.match(event.request)
-      .then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          if (response && response.status === 200 && response.type === 'basic') {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        }).catch(() => caches.match('./index.html'));
-      })
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(response => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
+        return response;
+      });
+    })
   );
 });
